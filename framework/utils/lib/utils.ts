@@ -129,6 +129,9 @@ export function bufferToStream(buffer: Buffer): NodeJS.ReadableStream {
     return stream;
 }
 
+let ObjectId: typeof import('bson').ObjectId; // eslint-disable-line
+let isMoment: (x: any) => x is Moment;
+
 export namespace Time {
     export const second = 1000;
     export const minute = second * 60;
@@ -145,15 +148,13 @@ export namespace Time {
     }
 
     export function getObjectID(timestamp: string | Date | Moment, allZero = true) {
-        let isMoment: (x: any) => x is Moment;
-        let ObjectId: typeof import('bson').ObjectId; // eslint-disable-line
         try {
-            ({ ObjectId } = require('bson'));
+            ObjectId ||= require('bson').ObjectId;
         } catch (e) {
             throw new Error('No bson module found');
         }
         try {
-            ({ isMoment } = require('moment'));
+            isMoment ||= require('moment').isMoment;
         } catch (e) {
             throw new Error('No moment module found');
         }
@@ -252,42 +253,6 @@ export function findFileSync(pathname: string, doThrow: boolean | Error = true) 
     if (doThrow) throw (typeof doThrow !== 'boolean' ? doThrow : new Error(`File ${pathname} not found`));
     return null;
 }
-
-export async function retry<Arg extends any[], Ret>(func: (...args: Arg) => Ret, ...args: Arg): Promise<Ret>;
-export async function retry<Arg extends any[], Ret>(times: number, func: (...args: Arg) => Ret, ...args: Arg): Promise<Ret>;
-// eslint-disable-next-line consistent-return
-export async function retry(arg0: number | ((...args: any[]) => any), func: any, ...args: any[]): Promise<any> {
-    let res;
-    if (typeof arg0 !== 'number') {
-        args = [func, ...args];
-        func = arg0;
-        arg0 = 3;
-    }
-    for (let i = 1; i <= arg0; i++) {
-        try {
-            // eslint-disable-next-line no-await-in-loop
-            res = await func(...args);
-        } catch (e) {
-            if (i === arg0) throw e;
-            continue;
-        }
-        return res;
-    }
-}
-
-export function CallableInstance(property = '__call__') {
-    let func;
-    if (typeof property === 'function') func = property;
-    else func = this.constructor.prototype[property];
-    const apply = function __call__(...args) { return func.apply(apply, ...args); };
-    Object.setPrototypeOf(apply, this.constructor.prototype);
-    for (const p of Object.getOwnPropertyNames(func)) {
-        Object.defineProperty(apply, p, Object.getOwnPropertyDescriptor(func, p));
-    }
-    return apply;
-}
-
-CallableInstance.prototype = Object.create(Function.prototype);
 
 export const htmlEncode = (str: string) => str.replace(/[&<>'"]/g,
     (tag: string) => ({

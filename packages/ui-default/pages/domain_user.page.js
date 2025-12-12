@@ -23,12 +23,12 @@ const page = new NamedPage('domain_user', () => {
   });
 
   async function handleClickAddUser() {
-    const res = await prompt('Add User', {
+    const res = await prompt(i18n('Add User'), {
       user: {
         type: 'userId',
         required: true,
         autofocus: true,
-        label: 'Username / UID',
+        label: i18n('Username / UID'),
         columns: 6,
       },
       role: {
@@ -38,10 +38,10 @@ const page = new NamedPage('domain_user', () => {
         options: UiContext.roles.filter((i) => !['default', 'guest'].includes(i)),
         columns: -6,
       },
-      ...(UiContext.canForceJoin ? {
+      ...((UiContext.canForceJoin && UiContext.domain._id !== 'system') ? {
         join: {
           type: 'checkbox',
-          label: 'Mark user as joined using admin privilege',
+          label: i18n('Mark user as joined using admin privilege'),
         },
       } : {}),
     });

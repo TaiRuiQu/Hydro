@@ -15,7 +15,7 @@ import domain from '../model/domain';
 import MessageModel from '../model/message';
 import * as oplog from '../model/oplog';
 import { DOMAIN_SETTINGS, DOMAIN_SETTINGS_BY_KEY } from '../model/setting';
-import * as system from '../model/system';
+import system from '../model/system';
 import user from '../model/user';
 import {
     Handler, Mutation, param, post, Query, query, requireSudo, Types,
@@ -175,7 +175,7 @@ class DomainUserHandler extends ManageHandler {
     @param('role', Types.Role)
     @param('join', Types.Boolean)
     async postSetUsers(domainId: string, uid: number[], role: string, join = false) {
-        if (join) this.checkPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN);
+        if (join && !system.get('server.allowInvite')) this.checkPriv(PRIV.PRIV_MANAGE_ALL_DOMAIN);
         await Promise.all([
             domain.setUserRole(domainId, uid, role),
             oplog.log(this, 'domain.setRole', { uid, role, join }),

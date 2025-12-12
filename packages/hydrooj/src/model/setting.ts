@@ -1,13 +1,13 @@
 /* eslint-disable max-len */
 /* eslint-disable no-await-in-loop */
 import fs from 'fs';
+import saslPrep from '@mongodb-js/saslprep';
 import yaml from 'js-yaml';
 import { Dictionary } from 'lodash';
 import moment from 'moment-timezone';
-import saslPrep from 'saslprep';
 import Schema from 'schemastery';
 import { LangConfig, parseLang } from '@hydrooj/common';
-import { findFileSync, randomstring, retry } from '@hydrooj/utils';
+import { findFileSync, randomstring } from '@hydrooj/utils';
 import { Context } from '../context';
 import { Setting as _Setting } from '../interface';
 import { Logger } from '../logger';
@@ -314,6 +314,7 @@ SystemSetting(Schema.object({
         verify: Schema.boolean().default(true).description('Verify register email'),
     }).extra('family', 'setting_smtp'),
     server: Schema.object({
+        allowInvite: Schema.boolean().default(true).description('Allow invite users'),
         center: Schema.string().default('https://hydro.ac/center').description('Server Center').role('url').hidden(),
         name: Schema.string().default('Hydro').description('Server Name'),
         url: Schema.string().default('/').description('Server BaseURL'),
@@ -386,7 +387,7 @@ export async function apply(ctx: Context) {
         if (!setting.value) continue;
         const current = await ctx.db.collection('system').findOne({ _id: setting.key });
         if (!current || current.value == null || current.value === '') {
-            await retry(system.set, setting.key, setting.value);
+            await system.set(setting.key, setting.value);
         }
     }
     try {
@@ -404,6 +405,7 @@ export async function apply(ctx: Context) {
         LangSettingNode.range = range;
         ServerLangSettingNode.range = range;
     });
+    ctx.emit('system/setting-loaded');
 }
 
 global.Hydro.model.setting = {
